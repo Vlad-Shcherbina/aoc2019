@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 const input = fs.readFileSync('data/01.txt', { encoding: 'utf-8' });
-const lines = input.split('\n').filter((line) => line);
+const lines = input.split('\n').filter(Boolean);
 let s = 0;
 let s2 = 0;
 for (const line of lines) {
