@@ -6,3 +6,4 @@ let prog = fs.readFileSync('data/09.txt', { encoding: 'utf8' })
     .map((x) => BigInt(x))
 
 console.log('part 1:', intcode.run(prog, [1n]))
+console.log('part 2:', intcode.run(prog, [2n]))
