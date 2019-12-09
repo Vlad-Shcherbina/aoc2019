@@ -1,77 +1,77 @@
 import * as assert from 'assert'
 
 export class Machine {
-    mem: number[]
+    mem: bigint[]
     ip: number
-    input: number[]
+    input: bigint[]
 
-    constructor(prog: number[]) {
+    constructor(prog: bigint[]) {
         this.mem = prog.slice(0)
         this.ip = 0
         this.input = []
     }
 
-    feedInput(input: number[]) {
+    feedInput(input: bigint[]) {
         this.input = this.input.concat(input)
     }
 
-    run(): { event: 'INPUT' } | { event: 'OUTPUT', output: number } | { event: 'HALT' } {
+    run(): { event: 'INPUT' } | { event: 'OUTPUT', output: bigint } | { event: 'HALT' } {
         let mem = this.mem
         while (true) {
             assert.ok(0 <= this.ip && this.ip < mem.length)
-            let modes = Math.floor(mem[this.ip] / 100)
-            let opcode = mem[this.ip] % 100
-            if (opcode === 1) {
-                assert.strictEqual(Math.floor(mem[this.ip] / 10000), 0)
-                mem[mem[this.ip + 3]] = this.readOperand(1) + this.readOperand(2)
+            let modes = mem[this.ip] / 100n
+            let opcode = mem[this.ip] % 100n
+            if (opcode === 1n) {
+                assert.strictEqual(mem[this.ip] / 10000n, 0n)
+                mem[Number(mem[this.ip + 3])] = this.readOperand(1) + this.readOperand(2)
                 this.ip += 4
-            } else if (opcode == 2) {
-                assert.strictEqual(Math.floor(mem[this.ip] / 10000), 0)
-                mem[mem[this.ip + 3]] = this.readOperand(1) * this.readOperand(2)
+            } else if (opcode == 2n) {
+                assert.strictEqual(mem[this.ip] / 10000n, 0n)
+                mem[Number(mem[this.ip + 3])] = this.readOperand(1) * this.readOperand(2)
                 this.ip += 4
-            } else if (opcode == 3) {
-                assert.strictEqual(Math.floor(mem[this.ip] / 100), 0)
+            } else if (opcode == 3n) {
+                assert.strictEqual(mem[this.ip] / 100n, 0n)
                 if (this.input.length == 0) {
                     return { event: 'INPUT' }
                 }
-                mem[mem[this.ip + 1]] = this.input[0]
+                mem[Number(mem[this.ip + 1])] = this.input[0]
                 this.input = this.input.slice(1)
                 this.ip += 2
-            } else if (opcode == 4) {
+            } else if (opcode == 4n) {
                 let output = this.readOperand(1)
                 this.ip += 2
                 return { event: 'OUTPUT', output: output }
-            } else if (opcode == 5) {
-                if (this.readOperand(1) !== 0) {
-                    this.ip = this.readOperand(2)
+            } else if (opcode == 5n) {
+                if (this.readOperand(1) !== 0n) {
+                    this.ip = Number(this.readOperand(2))
                 } else {
                     this.ip += 3
                 }
-            } else if (opcode == 6) {
-                if (this.readOperand(1) === 0) {
-                    this.ip = this.readOperand(2)
+            } else if (opcode == 6n) {
+                if (this.readOperand(1) === 0n) {
+                    this.ip = Number(this.readOperand(2))
                 } else {
                     this.ip += 3
                 }
-            } else if (opcode == 7) {
-                assert.strictEqual(Math.floor(mem[this.ip] / 10000), 0)
+            } else if (opcode == 7n) {
+                assert.strictEqual(mem[this.ip] / 10000n, 0n)
                 if (this.readOperand(1) <
                     this.readOperand(2)) {
-                    mem[mem[this.ip + 3]] = 1;
+                    mem[Number(mem[this.ip + 3])] = 1n;
                 } else {
-                    mem[mem[this.ip + 3]] = 0;
+                    mem[Number(mem[this.ip + 3])] = 0n;
                 }
                 this.ip += 4
-            } else if (opcode == 8) {
-                assert.strictEqual(Math.floor(mem[this.ip] / 10000), 0)
+            } else if (opcode == 8n) {
+                assert.strictEqual(mem[this.ip] / 10000n, 0n)
                 if (this.readOperand(1) ===
                     this.readOperand(2)) {
-                    mem[mem[this.ip + 3]] = 1;
+                    mem[Number(mem[this.ip + 3])] = 1n;
                 } else {
-                    mem[mem[this.ip + 3]] = 0;
+                    mem[Number(mem[this.ip + 3])] = 0n;
                 }
                 this.ip += 4
-            } else if (opcode == 99) {
+            } else if (opcode == 99n) {
                 return { event: 'HALT' }
             } else {
                 assert.fail(`unknown opcode ${opcode}`)
@@ -79,20 +79,20 @@ export class Machine {
         }
     }
 
-    readOperand(pos: number) {
+    readOperand(pos: number): bigint {
         let mode;
         if (pos === 1) {
-            mode = Math.floor(this.mem[this.ip] / 100) % 10
+            mode = this.mem[this.ip] / 100n % 10n
         } else if (pos === 2) {
-            mode = Math.floor(this.mem[this.ip] / 1000) % 10
+            mode = this.mem[this.ip] / 1000n % 10n
         } else if (pos === 3) {
-            mode = Math.floor(this.mem[this.ip] / 10000) % 10
+            mode = this.mem[this.ip] / 10000n % 10n
         } else {
             throw pos
         }
-        if (mode === 0) {
-            return this.mem[this.mem[this.ip + pos]]
-        } else if (mode === 1) {
+        if (mode === 0n) {
+            return this.mem[Number(this.mem[this.ip + pos])]
+        } else if (mode === 1n) {
             return this.mem[this.ip + pos]
         } else {
             throw mode
@@ -100,7 +100,7 @@ export class Machine {
     }
 }
 
-export function run(prog: number[], inputs: number[]): number[] {
+export function run(prog: bigint[], inputs: bigint[]): bigint[] {
     let m = new Machine(prog)
     m.feedInput(inputs)
     let result = []
