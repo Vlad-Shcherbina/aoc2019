@@ -4,7 +4,7 @@ import * as assert from 'assert'
 
 let prog = fs.readFileSync('data/07.txt', {encoding: 'utf8'})
     .split(',')
-    .map((x) => BigInt(parseInt(x)))
+    .map((x) => BigInt(x))
 
 let used = [false, false, false, false, false]
 let best = -1000000000n
