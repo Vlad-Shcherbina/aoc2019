@@ -1,17 +1,6 @@
 import * as fs from 'fs'
 import * as assert from 'assert'
-
-function gcd(a: number, b: number): number {
-    assert.strictEqual(a, Math.floor(a))
-    assert.strictEqual(b, Math.floor(b))
-    assert.ok(a >= 0 && b >= 0)
-    while (b > 0) {
-        let t = a % b
-        a = b
-        b = t
-    }
-    return a
-}
+import * as util from './util.js'
 
 let rows = fs.readFileSync('data/10.txt', { encoding: 'utf8' }).trimRight().split('\n')
 
@@ -40,7 +29,7 @@ for (let [sx, sy] of asteroids) {
         }
         let dx = x - sx
         let dy = y - sy
-        let d = gcd(Math.abs(dx), Math.abs(dy))
+        let d = util.gcd(Math.abs(dx), Math.abs(dy))
         dx /= d
         dy /= d
         while (true) {
