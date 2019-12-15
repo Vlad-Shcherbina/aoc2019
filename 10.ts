@@ -78,8 +78,8 @@ for (let [x, y] of asteroids) {
 let a_groups = Array.from(angle_to_asteroids)
 a_groups.sort(([a1, _], [a2, _2]) => a1 - a2)
 let groups = a_groups.map(([_, group]) => group)
-let dist2 = (x:number, y:number) =>
-    (x - station_x) * (x - station_x) + (y - station_y) * (y - station_y)
+let sqr = (x: number) => x * x
+let dist2 = (x: number, y: number) => sqr(x - station_x) + sqr(y - station_y)
 groups.forEach((group) => group.sort(([x1, y1], [x2, y2]) => {
     return dist2(x2, y2) - dist2(x1, y1)
 }))
