@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import { assert } from './util.js'
 
 export class Machine {
     mem: bigint[]
@@ -20,7 +20,7 @@ export class Machine {
     run(): { event: 'INPUT' } | { event: 'OUTPUT', output: bigint } | { event: 'HALT' } {
         let mem = this.mem
         while (true) {
-            assert.ok(0 <= this.ip && this.ip < mem.length)
+            assert(0 <= this.ip && this.ip < mem.length)
             let m = this.readMem(this.ip)
             let modes = m / 100n
             let opcode = m % 100n
@@ -75,7 +75,7 @@ export class Machine {
             } else if (opcode == 99n) {
                 return { event: 'HALT' }
             } else {
-                assert.fail(`unknown opcode ${opcode}`)
+                assert(false, `unknown opcode ${opcode}`)
             }
         }
     }
@@ -110,7 +110,7 @@ export class Machine {
         if (addr > BigInt(this.mem.length)) {
             return 0n
         }
-        assert.ok!(addr >= 0n)
+        assert(addr >= 0n)
         return this.mem[Number(addr)]
     }
 
@@ -118,7 +118,7 @@ export class Machine {
         while (addr > BigInt(this.mem.length)) {
             this.mem.push(0n)
         }
-        assert.ok!(addr >= 0n)
+        assert(addr >= 0n)
         this.mem[Number(addr)] = value
     }
 }
@@ -142,7 +142,7 @@ export function run(prog: bigint[], inputs: bigint[]): bigint[] {
     while (true) {
         let res = m.run()
         if (res.event == 'INPUT') {
-            assert.fail('not enough input')
+            assert(false, 'not enough input')
         } else if (res.event == 'OUTPUT') {
             result.push(res.output)
         } else if (res.event = 'HALT') {
@@ -155,15 +155,18 @@ export function run(prog: bigint[], inputs: bigint[]): bigint[] {
 
 function test() {
     let quine = [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99].map(BigInt);
-    assert.deepStrictEqual(quine, run(quine, []))
+    let result = run(quine, [])
+    assert(JSON.stringify(quine.map(Number)) === JSON.stringify(result.map(Number)))
 
     let prog = [1102,34915192,34915192,7,4,7,99,0].map(BigInt)
     let output = run(prog, [])
-    assert.strictEqual(output.length, 1)
-    assert.strictEqual(output[0].toString().length, 16)
+    assert(output.length === 1)
+    assert(output[0].toString().length === 16)
 
     prog = [104,1125899906842624,99].map(BigInt)
-    assert.deepStrictEqual([1125899906842624n], run(prog, []))
+    result = run(prog, [])
+    assert(result.length === 1)
+    assert(result[0] === 1125899906842624n)
 }
 
 // test()

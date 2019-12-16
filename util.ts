@@ -1,9 +1,13 @@
-import * as assert from 'assert'
+export function assert(condition: any, msg?: string): asserts condition {
+    if (!condition) {
+        throw new Error(msg)
+    }
+}
 
 export function gcd(a: number, b: number): number {
-    assert.strictEqual(a, Math.floor(a))
-    assert.strictEqual(b, Math.floor(b))
-    assert.ok(a >= 0 && b >= 0)
+    assert(a === Math.floor(a))
+    assert(b === Math.floor(b))
+    assert(a >= 0 && b >= 0)
     while (b > 0) {
         let t = a % b
         a = b
