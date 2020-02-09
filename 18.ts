@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as child_process from 'child_process'
 import { assert } from './util.js'
+import { heap_push, heap_pop } from './heapq.js'
 
 interface Pt {
     x: number
@@ -121,27 +122,35 @@ function neighbors(state: State) {
 }
 
 function dijkstra(gragh: Map<string, Map<string, number>>, start_state: State) {
+    function cmp(t1: {dist: number}, t2: {dist: number}) {
+        return t1.dist - t2.dist
+    }
     let frontier = new Map<string, { dist: number, state: State }>()
-    frontier.set(state_key(start_state), { state: start_state, dist: 0 })
+    let t = { state: start_state, dist: 0 }
+    frontier.set(state_key(start_state), t)
+    let heap: { state: State, dist: number }[] = []
+    heap_push(heap, t, cmp)
     let visited = new Set<string>()
 
     let num_ops = 0
     while (true) {
-        let min_dist = Infinity
-        let min_state: State | null = null as any
-        frontier.forEach(({ dist, state }) => {
-            if (dist < min_dist) {
-                min_dist = dist
-                min_state = state
-            }
-        })
-        num_ops += frontier.size
+        let qqq = heap_pop(heap, cmp)
+        assert(qqq !== undefined)
+        let min_dist = qqq.dist
+        let min_state = qqq.state
+        let min_key = state_key(min_state)
+
+        let f = frontier.get(min_key)
+        if (f === undefined || f.dist < min_dist) {
+            continue
+        }
+
+        num_ops += Math.ceil(Math.log2(heap.length + 1))
         assert(min_state !== null)
         if (min_state.keys.length === num_keys) {
             return min_dist
         }
-        let min_key = state_key(min_state)
-        if (Math.random() < 1e-4) {
+        if (Math.random() < 1e-5) {
             console.log(visited.size, num_ops, ' ', min_dist, min_key, '...')
         }
         frontier.delete(min_key)
@@ -153,10 +162,16 @@ function dijkstra(gragh: Map<string, Map<string, number>>, start_state: State) {
             }
             let entry = frontier.get(k)
             if (entry === undefined) {
-                entry = { dist: Infinity, state: s}
+                entry = { dist: min_dist + d, state: s}
                 frontier.set(k, entry)
+                heap_push(heap, entry, cmp)
+            } else {
+                if (min_dist + d < entry.dist) {
+                    entry = {...entry, dist: min_dist + d}
+                    frontier.set(k, entry)
+                    heap_push(heap, entry, cmp)
+                }
             }
-            entry.dist = Math.min(entry.dist, min_dist + d)
         }
     }
 }
@@ -168,7 +183,9 @@ let graph = build_graph(maze)
 let num_keys = Array.from(graph).filter(([pos, _]) => /[a-z]/.test(pos)).length
 // render_graph(graph)
 let start_state: State = { pos: ['@'], keys: [] }
+console.time('part 1')
 console.log('part 1:', dijkstra(graph, start_state))
+console.timeEnd('part 1')
 
 let start = find('@', maze)!
 let s;
@@ -182,4 +199,6 @@ maze[start.y + 1] = s.slice(0, start.x - 1) + '3#4' + s.slice(start.x + 2)
 graph = build_graph(maze)
 // render_graph(graph)
 start_state = { pos: ['1', '2', '3', '4'], keys: [] }
+console.time('part 2')
 console.log('part 2:', dijkstra(graph, start_state))
+console.timeEnd('part 2')
