@@ -48,42 +48,38 @@ function bfs(start: Pt, maze: string[]): Map<string, number> {
     return result
 }
 
-
-let maze = fs.readFileSync('data/18.txt', {encoding: 'utf8'})
-    .trimRight().split('\n')
-
-let start = find('@', maze)!
-
-let num_keys = 0
-let graph = new Map<string, Map<string, number>>()
-maze.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) {
-        if (row[x] === '.' || row[x] === '#') {
-            continue
-        }
-        let ns = bfs({x, y}, maze)
-        graph.set(row[x], ns)
-        if (row[x] !== '@' && row[x].toLowerCase() === row[x]) {
-            num_keys++
-        }
-    }
-})
-
-/*let dot = ['graph {']
-graph.forEach((_, k) => {
-    dot.push(`  "${k}" [shape=circle];`)
-})
-graph.forEach((ns, u) => {
-    ns.forEach((dist, v) => {
-        if (u <= v) {
-            dot.push(`  "${u}" -- "${v}" [label=${dist}];`)
+function build_graph(maze: string[]) {
+    let num_keys = 0
+    let graph = new Map<string, Map<string, number>>()
+    maze.forEach((row, y) => {
+        for (let x = 0; x < row.length; x++) {
+            if (row[x] === '.' || row[x] === '#') {
+                continue
+            }
+            let ns = bfs({x, y}, maze)
+            graph.set(row[x], ns)
         }
     })
-})
-dot.push('}')
-fs.writeFileSync('tmp.dot', dot.join('\n'))
-let p = child_process.spawnSync('dot', ['-Tpng', 'tmp.dot', '-o', 'tmp.png'])
-console.log(p)*/
+    return graph
+}
+
+function render_graph(gragh: Map<string, Map<string, number>>) {
+    let dot = ['graph {']
+    graph.forEach((_, k) => {
+        dot.push(`  "${k}" [shape=circle];`)
+    })
+    graph.forEach((ns, u) => {
+        ns.forEach((dist, v) => {
+            if (u <= v) {
+                dot.push(`  "${u}" -- "${v}" [label=${dist}];`)
+            }
+        })
+    })
+    dot.push('}')
+    fs.writeFileSync('tmp.dot', dot.join('\n'))
+    let p = child_process.spawnSync('dot', ['-Tpng', 'tmp.dot', '-o', 'tmp.png'])
+    console.log(p)
+}
 
 interface State {
     pos: string,
@@ -120,41 +116,52 @@ function neighbors(state: State) {
     return ns
 }
 
-let start_state: State = { pos: '@', keys: [] }
-let frontier = new Map<string, { dist: number, state: State }>()
-frontier.set(state_key(start_state), { state: start_state, dist: 0 })
-let visited = new Set<string>()
+function dijkstra(gragh: Map<string, Map<string, number>>, start_state: State) {
+    let frontier = new Map<string, { dist: number, state: State }>()
+    frontier.set(state_key(start_state), { state: start_state, dist: 0 })
+    let visited = new Set<string>()
 
-while (true) {
-    let min_dist = Infinity
-    let min_state: State | null = null as any
-    frontier.forEach(({ dist, state }) => {
-        if (dist < min_dist) {
-            min_dist = dist
-            min_state = state
+    while (true) {
+        let min_dist = Infinity
+        let min_state: State | null = null as any
+        frontier.forEach(({ dist, state }) => {
+            if (dist < min_dist) {
+                min_dist = dist
+                min_state = state
+            }
+        })
+        assert(min_state !== null)
+        if (min_state.keys.length === num_keys) {
+            return min_dist
         }
-    })
-    assert(min_state !== null)
-    if (min_state.keys.length === num_keys) {
-        console.log('part 1:', min_dist)
-        break
-    }
-    if (Math.random() < 1e-4) {
-        console.log(min_dist, min_state.keys.join(''), '...')
-    }
-    let min_key = state_key(min_state)
-    frontier.delete(min_key)
-    visited.add(min_key)
-    for (let [s, d] of neighbors(min_state)) {
-        let k = state_key(s)
-        if (visited.has(k)) {
-            continue
+        if (Math.random() < 1e-4) {
+            console.log(min_dist, min_state.keys.join(''), '...')
         }
-        let entry = frontier.get(k)
-        if (entry === undefined) {
-            entry = { dist: Infinity, state: s}
-            frontier.set(k, entry)
+        let min_key = state_key(min_state)
+        frontier.delete(min_key)
+        visited.add(min_key)
+        for (let [s, d] of neighbors(min_state)) {
+            let k = state_key(s)
+            if (visited.has(k)) {
+                continue
+            }
+            let entry = frontier.get(k)
+            if (entry === undefined) {
+                entry = { dist: Infinity, state: s}
+                frontier.set(k, entry)
+            }
+            entry.dist = Math.min(entry.dist, min_dist + d)
         }
-        entry.dist = Math.min(entry.dist, min_dist + d)
     }
 }
+
+let maze = fs.readFileSync('data/18.txt', {encoding: 'utf8'})
+    .trimRight().split('\n')
+
+let start = find('@', maze)!
+let graph = build_graph(maze)
+let num_keys = Array.from(graph).filter(([pos, _]) => pos !== '@' && pos.toLowerCase() === pos).length
+// render_graph(graph)
+
+let start_state: State = { pos: '@', keys: [] }
+console.log('part 1:', dijkstra(graph, start_state))
