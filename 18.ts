@@ -82,36 +82,40 @@ function render_graph(gragh: Map<string, Map<string, number>>) {
 }
 
 interface State {
-    pos: string,
+    pos: string[],
     keys: string[],  // sorted
 }
 
 function state_key(state: State) {
-    return state.pos + '_' + state.keys.join('')
+    return state.pos.join('') + '_' + state.keys.join('')
 }
 
 function neighbors(state: State) {
     let ns: [State, number][] = []
-    let q = graph.get(state.pos)
-    assert(q !== undefined)
-    q.forEach((dist, v) => {
-        if (v !== '@' && v.toUpperCase() === v) {
-            if (!state.keys.some(k => k.toUpperCase() === v)) {
-                return
+    state.pos.forEach((p, idx) => {
+        let q = graph.get(p)
+        assert(q !== undefined)
+        q.forEach((dist, v) => {
+            if (/[A-Z]/.test(v)) {
+                if (!state.keys.some(k => k.toUpperCase() === v)) {
+                    return
+                }
             }
-        }
-        let {keys} = state
-        if (v !== '@' && v.toLowerCase() === v) {
-            if (!keys.includes(v)) {
-                keys = keys.slice(0)
-                keys.push(v)
-                keys.sort()
+            let {keys} = state
+            if (/[a-z]/.test(v)) {
+                if (!keys.includes(v)) {
+                    keys = keys.slice(0)
+                    keys.push(v)
+                    keys.sort()
+                }
             }
-        }
-        ns.push([
-            { pos: v, keys },
-            dist,
-        ])
+            let pos = state.pos.slice(0)
+            pos[idx] = v
+            ns.push([
+                { pos, keys },
+                dist,
+            ])
+        })
     })
     return ns
 }
@@ -121,6 +125,7 @@ function dijkstra(gragh: Map<string, Map<string, number>>, start_state: State) {
     frontier.set(state_key(start_state), { state: start_state, dist: 0 })
     let visited = new Set<string>()
 
+    let num_ops = 0
     while (true) {
         let min_dist = Infinity
         let min_state: State | null = null as any
@@ -130,14 +135,15 @@ function dijkstra(gragh: Map<string, Map<string, number>>, start_state: State) {
                 min_state = state
             }
         })
+        num_ops += frontier.size
         assert(min_state !== null)
         if (min_state.keys.length === num_keys) {
             return min_dist
         }
-        if (Math.random() < 1e-4) {
-            console.log(min_dist, min_state.keys.join(''), '...')
-        }
         let min_key = state_key(min_state)
+        if (Math.random() < 1e-4) {
+            console.log(visited.size, num_ops, ' ', min_dist, min_key, '...')
+        }
         frontier.delete(min_key)
         visited.add(min_key)
         for (let [s, d] of neighbors(min_state)) {
@@ -158,10 +164,22 @@ function dijkstra(gragh: Map<string, Map<string, number>>, start_state: State) {
 let maze = fs.readFileSync('data/18.txt', {encoding: 'utf8'})
     .trimRight().split('\n')
 
-let start = find('@', maze)!
 let graph = build_graph(maze)
-let num_keys = Array.from(graph).filter(([pos, _]) => pos !== '@' && pos.toLowerCase() === pos).length
+let num_keys = Array.from(graph).filter(([pos, _]) => /[a-z]/.test(pos)).length
 // render_graph(graph)
-
-let start_state: State = { pos: '@', keys: [] }
+let start_state: State = { pos: ['@'], keys: [] }
 console.log('part 1:', dijkstra(graph, start_state))
+
+let start = find('@', maze)!
+let s;
+s = maze[start.y - 1]
+maze[start.y - 1] = s.slice(0, start.x - 1) + '1#2' + s.slice(start.x + 2)
+s = maze[start.y]
+maze[start.y] = s.slice(0, start.x - 1) + '###' + s.slice(start.x + 2)
+s = maze[start.y + 1]
+maze[start.y + 1] = s.slice(0, start.x - 1) + '3#4' + s.slice(start.x + 2)
+// console.log(maze)
+graph = build_graph(maze)
+// render_graph(graph)
+start_state = { pos: ['1', '2', '3', '4'], keys: [] }
+console.log('part 2:', dijkstra(graph, start_state))
