@@ -32,6 +32,7 @@ let c = 'L,12,L,10,L,8'
 for (let ch of `A,B,A,C,A,B,C,C,A,B\n${a}\n${b}\n${c}\ny\n`) {
     m.feedInput([BigInt(ch.charCodeAt(0))])
 }
+// TODO: deduplicate (anchor: jbWYTVqwDjaN)
 let outputs = ''
 while (true) {
     let res = m.run()
