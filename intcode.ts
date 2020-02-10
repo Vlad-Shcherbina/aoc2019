@@ -17,9 +17,24 @@ export class Machine {
         this.input = this.input.concat(input)
     }
 
-    run(): { event: 'INPUT' } | { event: 'OUTPUT', output: bigint } | { event: 'HALT' } {
+    run():
+        { event: 'INPUT', executed: number  } |
+        { event: 'OUTPUT', output: bigint, executed: number  } |
+        { event: 'HALT', executed: number  }
+    run(limit: number):
+        { event: 'INPUT', executed: number  } |
+        { event: 'OUTPUT', output: bigint, executed: number  } |
+        { event: 'HALT', executed: number  } |
+        { event: 'LIMIT', executed: number }
+    run(limit?: number):
+        { event: 'INPUT', executed: number  } |
+        { event: 'OUTPUT', output: bigint, executed: number  } |
+        { event: 'HALT', executed: number  } |
+        { event: 'LIMIT', executed: number }
+    {
         let mem = this.mem
-        while (true) {
+        let executed = 0
+        while (limit === undefined || executed < limit) {
             assert(0 <= this.ip && this.ip < mem.length)
             let m = this.readMem(this.ip)
             let modes = m / 100n
@@ -32,7 +47,7 @@ export class Machine {
                 this.ip += 4n
             } else if (opcode == 3n) {
                 if (this.input.length == 0) {
-                    return { event: 'INPUT' }
+                    return { event: 'INPUT', executed }
                 }
                 this.writeOperand(1n, this.input[0])
                 this.input = this.input.slice(1)
@@ -40,7 +55,7 @@ export class Machine {
             } else if (opcode == 4n) {
                 let output = this.readOperand(1n)
                 this.ip += 2n
-                return { event: 'OUTPUT', output: output }
+                return { event: 'OUTPUT', output: output, executed }
             } else if (opcode == 5n) {
                 if (this.readOperand(1n) !== 0n) {
                     this.ip = this.readOperand(2n)
@@ -73,11 +88,13 @@ export class Machine {
                 this.relBase += this.readOperand(1n);
                 this.ip += 2n
             } else if (opcode == 99n) {
-                return { event: 'HALT' }
+                return { event: 'HALT', executed }
             } else {
                 assert(false, `unknown opcode ${opcode}`)
             }
+            executed += 1
         }
+        return { event: 'LIMIT', executed }
     }
 
     readOperand(pos: bigint): bigint {
