@@ -1,41 +1,41 @@
 import * as fs from 'fs'
 import { assert } from './util.js'
 
-const N = 10007
+interface Affine {
+    offset: bigint
+    step: bigint
+}
+
+function compose(a: Affine, b: Affine, m: bigint): Affine {
+    return {
+        offset: (a.offset * b.step + b.offset) % m,
+        step: a.step * b.step % m
+    }
+}
+
+const N = 10007n
 
 let lines = fs.readFileSync('data/22.txt', {encoding: 'utf8'}).trimEnd().split('\n')
 console.log(lines)
 
-let deck = Array.from(new Array(N).keys())
+let transform = { offset: 0n, step: 1n }
 
 for (let line of lines) {
     let m = null
     if (line === 'deal into new stack') {
         console.log('deal into new stack')
-        deck.reverse()
+        transform = compose(transform, { offset: -1n, step: -1n }, N)
     } else if (m = /cut (-?\d+)/.exec(line)) {
-        let offset = parseInt(m[1])
+        let offset = BigInt(m[1])
         console.log('cut', offset)
-        if (offset < 0) {
-            offset += deck.length
-        }
-        deck = [...deck.slice(offset), ...deck.slice(0, offset)]
+        transform = compose(transform, { offset: -offset, step: 1n }, N)
     } else if (m = /deal with increment (\d+)/.exec(line)) {
-        let increment = parseInt(m[1])
+        let increment = BigInt(m[1])
         console.log('deal with increment', increment)
-        let new_deck = new Array(deck.length)
-        let pos = 0
-        for (let x of deck) {
-            new_deck[pos] = x
-            pos += increment
-            if (pos >= deck.length) {
-                pos -= deck.length
-            }
-        }
-        deck = new_deck
+        transform = compose(transform, { offset: 0n, step: increment }, N)
     } else {
         assert(false, line)
     }
 }
 
-console.log('part 1', deck.indexOf(2019))
+console.log('part 1', ((transform.step * 2019n + transform.offset) % N + N) % N)
