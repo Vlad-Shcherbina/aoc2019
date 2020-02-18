@@ -5,7 +5,7 @@ const CELL_SIZE = 12
 
 
 async function main() {
-    let text = await (await fetch('data/13.txt')).text()
+    let text = await (await fetch('./data/13.txt')).text()
     let prog = text.split(',').map(BigInt)
     prog[0] = 2n
 
